@@ -176,8 +176,7 @@ where
 		.await;
 
 	let insert_lock = self.mutex_insert.lock(pdu.room_id()).await;
-	let next_count1 = self.services.globals.next_count();
-	let next_count2 = self.services.globals.next_count();
+	let next_count = self.services.globals.next_count();
 
 	// Mark as read first so the sending client doesn't get a notification even if
 	// appending fails. Route through the dispatcher so per-thread counts are
@@ -187,7 +186,7 @@ where
 		.private_read_set(
 			pdu.room_id(),
 			pdu.sender(),
-			*next_count2,
+			*next_count,
 			pdu.origin_server_ts(),
 			&ReceiptThread::Unthreaded,
 		)
@@ -202,7 +201,7 @@ where
 		)
 		.await;
 
-	let count = PduCount::Normal(*next_count1);
+	let count = PduCount::Normal(*next_count);
 	let pdu_id: RawPduId = PduId { shortroomid, count }.into();
 
 	// Insert pdu
@@ -220,8 +219,7 @@ where
 	self.append_pdu_effects(pdu_id, pdu, shortroomid, count, state_lock)
 		.await?;
 
-	drop(next_count1);
-	drop(next_count2);
+	drop(next_count);
 
 	self.services
 		.appservice
